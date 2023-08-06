@@ -1,12 +1,23 @@
-#include "/home/david/CLionProjects/Project main branch/src/FIRST ---PASS/header files/first_pass_headers.h"
+#include "/home/david/CLionProjects/My-project/Project main branch/src/FIRST ---PASS/header files/first_pass_headers.h"
+#include "/home/david/CLionProjects/My-project/Project main branch/src/Error handling/handle_error.h"
 
-
-// TODO dynamic memory allocating
-// TODO return struct at the end so that the second pass can use it
 // TODO make sure that every number is macro based
 
 
-int first_pass(FILE *am_file, FILE *tar_file) {
+int is_string_directive(char *word) {
+    if (strcmp(word,".string") == 0)
+        return 1;
+    return 0;
+}
+
+int is_data_directive(char *word){
+    if (strcmp(word,".data") == 0)
+        return 1;
+    return 0;
+}
+
+
+int first_pass(FILE *am_file, struct InstructionStructure *instructions_array, struct DataStructure *data_array, struct symboltable) {
     char line[LEN];
     char words_array [LEN][LEN] = {0}; /* Initialize array */
     int index = 0;
@@ -17,11 +28,6 @@ int first_pass(FILE *am_file, FILE *tar_file) {
     int line_number = 0;
     char *word = NULL;
     char *current_symbol_name = NULL;
-
-    /* here we should dynamically allocate memory */
-    /* TODO make create_instruction_array function */
-    struct InstructionStructure* instructions_array = (struct InstructionStructure*)calloc(ARRAY_SIZE, sizeof(struct InstructionStructure));
-    struct DataStructure* data_array = create_data_array(ARRAY_SIZE);
 
 
     while ( fgets(line,LEN ,am_file) ) {
@@ -64,10 +70,10 @@ int first_pass(FILE *am_file, FILE *tar_file) {
             }
 
             /* step 7 */    /*example:  .string "abcdefg"  */
-            if (is_string_directive(word)) {
+            if ( is_string_directive(word) ) {
                 /* assuming encode_data encodes the data to the array and returns number of lines encoded */
-                if (valid_string_directive(words_array, line_number, &error_found))
-                DC = DC + handle_string_directive(data_array, DC, words_array);
+                if ( valid_string_directive(words_array, line_number, &error_found,symbol_definition) )
+                    DC = DC + handle_string_directive(data_array, DC, words_array);
             } else { /* data directive */ /*example:  .data 1,3,4,5,6,2,4,5  */
                 if (valid_data_directive(words_array, line_number, &error_found))
                     DC = DC + handle_data_directive(data_array, DC, words_array);/* assuming encode_string encodes the string to the array and returns number of lines encoded */
@@ -106,6 +112,7 @@ int first_pass(FILE *am_file, FILE *tar_file) {
         if (valid_instruction(words_array, line_number, &error_found) )
             IC = IC + handle_valid_instruction(words_array, instructions_array,IC, symbol_definition);
         else {/* the second word is not an instruction nor data/string directive than output error */
+            /* here should be function that can find more specific errors */
             error_found = 1;
             handle_error(SomeErrorHere,line_number);
             continue;

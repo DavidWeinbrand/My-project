@@ -1,4 +1,4 @@
-#include "/home/david/CLionProjects/Project main branch/src/FIRST ---PASS/header files/first_pass_headers.h"
+#include "/home/david/CLionProjects/My-project/Project main branch/src/FIRST ---PASS/header files/first_pass_headers.h"
 void assign_operands(char words_array[LEN][LEN], char **operand1, char **operand2, int symbol_definition, int number_of_operands){
     int index = 0;  /* Initialize the index variable to 0 */
 
