@@ -1,4 +1,5 @@
 #include "/home/david/CLionProjects/Project main branch/src/FIRST ---PASS/header files/first_pass_headers.h"
+
 int is_whitespace(char c) {
     return c == ' ' || c == '\t';
 }

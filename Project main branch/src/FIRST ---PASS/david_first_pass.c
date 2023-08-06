@@ -4,18 +4,6 @@
 // TODO make sure that every number is macro based
 
 
-int is_string_directive(char *word) {
-    if (strcmp(word,".string") == 0)
-        return 1;
-    return 0;
-}
-
-int is_data_directive(char *word){
-    if (strcmp(word,".data") == 0)
-        return 1;
-    return 0;
-}
-
 
 int first_pass(FILE *am_file, struct InstructionStructure *instructions_array, struct DataStructure *data_array, struct symboltable) {
     char line[LEN];

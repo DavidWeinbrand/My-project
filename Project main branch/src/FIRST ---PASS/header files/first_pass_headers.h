@@ -130,4 +130,13 @@ int is_empty(const char *line);
 int is_comment(const char* line);
 int handle_valid_instruction(char words_array[LEN][LEN], struct InstructionStructure *instructions_array, int IC, int symbol_definition);
 
+
+/* valid data directive functions */
+int is_string_directive(char *word);
+int is_data_directive(char *word);
+/* By the project definition valid characters are visible ASCI chars which are chars between 32 and 126 including in the ASCI table */
+int is_valid_char(char c) ;
+int is_valid_string(char *string, int length) ;
+int valid_string_directive(char words_array[LEN][LEN], int line_number, int *error_found, int symbol_definition) ;
+
 #endif
