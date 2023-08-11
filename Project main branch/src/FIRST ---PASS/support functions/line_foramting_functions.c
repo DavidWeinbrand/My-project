@@ -1,8 +1,9 @@
-#include "/home/david/CLionProjects/Project main branch/src/FIRST ---PASS/header files/first_pass_headers.h"
+#include "/home/david/CLionProjects/My-project/Project main branch/src/FIRST ---PASS/header files/first_pass_headers.h"
 
 int is_whitespace(char c) {
     return c == ' ' || c == '\t';
 }
+
 void format_line(char source[LEN], char formatted_line[LEN]) {
     /* Get the length of the input line */
     int i = 0;
@@ -51,6 +52,7 @@ void format_line(char source[LEN], char formatted_line[LEN]) {
     /* Null-terminate the formatted string */
     formatted_line[formatted_index] = '\0';
 }
+
 void store_words(char line[], char resultArray[LEN][LEN]) {
     char* token;
     const char delimiter[] = " ";

@@ -1,5 +1,5 @@
 #include "/home/david/CLionProjects/My-project/Project main branch/src/FIRST ---PASS/header files/first_pass_headers.h"
-#include "/home/david/CLionProjects/My-project/Project main branch/src/Error handling/handle_error.h"
+#include "/home/david/CLionProjects/My-project/Project main branch/src/Error handling/errors.h"
 
 // TODO make sure that every number is macro based
 
@@ -57,14 +57,13 @@ int first_pass(FILE *am_file, struct InstructionStructure *instructions_array, s
                 add_symbol(symbol_table, current_symbol_name, DC, DATA);
             }
 
-            /* step 7 */    /*example:  .string "abcdefg"  */
+            /* step 7 */    /*example:  .string     "abc , de fg"  */
             if ( is_string_directive(word) ) {
-                /* assuming encode_data encodes the data to the array and returns number of lines encoded */
-                if ( valid_string_directive(words_array, line_number, &error_found,symbol_definition) )
-                    DC = DC + handle_string_directive(data_array, DC, words_array);
-            } else { /* data directive */ /*example:  .data 1,3,4,5,6,2,4,5  */
-                if (valid_data_directive(words_array, line_number, &error_found))
-                    DC = DC + handle_data_directive(data_array, DC, words_array);/* assuming encode_string encodes the string to the array and returns number of lines encoded */
+                if ( valid_string_directive(line, line_number, &error_found,symbol_definition) )
+                    DC = DC + handle_string_directive(line, DC, words_array,symbol_definition + 1, line_number);
+            } else { /* data directive */
+                if ( valid_data_directive(words_array, line_number, &error_found,symbol_definition) )
+                    DC = DC + handle_data_directive(data_array, DC, words_array);
             }
             continue;
         }
@@ -100,7 +99,7 @@ int first_pass(FILE *am_file, struct InstructionStructure *instructions_array, s
         if (valid_instruction(words_array, line_number, &error_found) )
             IC = IC + handle_valid_instruction(words_array, instructions_array,IC, symbol_definition);
         else {/* the second word is not an instruction nor data/string directive than output error */
-            /* here should be function that can find more specific errors */
+            /* here should be a function that can find more specific errors */
             error_found = 1;
             handle_error(SomeErrorHere,line_number);
             continue;
@@ -108,7 +107,7 @@ int first_pass(FILE *am_file, struct InstructionStructure *instructions_array, s
 
     }
     update_labelTable(label_table,IC);
-    return 0; /* here would be a struct */
+    return 0;
  }
 
 

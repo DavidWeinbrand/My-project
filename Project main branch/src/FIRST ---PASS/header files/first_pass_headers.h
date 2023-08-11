@@ -134,9 +134,19 @@ int handle_valid_instruction(char words_array[LEN][LEN], struct InstructionStruc
 /* valid data directive functions */
 int is_string_directive(char *word);
 int is_data_directive(char *word);
+
 /* By the project definition valid characters are visible ASCI chars which are chars between 32 and 126 including in the ASCI table */
 int is_valid_char(char c) ;
 int is_valid_string(char *string, int length) ;
-int valid_string_directive(char words_array[LEN][LEN], int line_number, int *error_found, int symbol_definition) ;
+
+int valid_string_directive(char *line, int line_number, int *error_found, int starting index) ;
+int handle_string_directive(struct DataStructure *data_array, int DC, char words_array[LEN][LEN],int starting_index, int line_number);
+
+int valid_number_range(char *word) ;
+int valid_data_directive(char words_array[LEN][LEN], int line_number, int *error_found, int symbol_definition) ;
+int valid_commas_in_line(char words_array[LEN][LEN], int starting_index, int line_number) ;
+
+char* turn_to_single_string(char words_array[LEN][LEN], int start_index, int line_number);
+
 
 #endif

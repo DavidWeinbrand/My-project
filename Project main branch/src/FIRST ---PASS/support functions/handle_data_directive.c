@@ -1,81 +1,208 @@
-
 int is_string_directive(char *word) {
     if (strcmp(word,".string") == 0)
         return 1;
     return 0;
 }
-
 int is_data_directive(char *word){
     if (strcmp(word,".data") == 0)
         return 1;
     return 0;
 }
 
+
 /* By the project definition valid characters are visible ASCI chars which are chars between 32 and 126 including in the ASCI table */
 int is_valid_char(char c) {
     return (c >= 32 && c <= 126);
 }
+char *custom_strrchr(const char *str, int ch) {
+    const char *last = NULL;
 
-int is_valid_string(char *string, int length) {
-    int i;
-    for (i = 0; i < length; i++) {
-        char current_char = string[i];
-        if (current_char == '\\') {
-            // Found backslash, skip the next character (it's valid)
-            i++;
-        } else if (current_char == '"') {
-            // Found single quote without a preceding backslash, it's an error
-            return 0;
-        } else if (!is_valid_char(current_char)) {
+    while (*str != '\0') {
+        if (*str == ch) {
+            last = str;
+        }
+        str++;
+    }
+
+    return (char *)last;
+}
+int valid_string_directive(char *line, int line_number, int *error_found, int words_to_skip) {
+    char *directive = ".string";
+    char quote = '\"';
+    char *start = line;
+    char *last_non_whitespace = NULL;
+    char *opening_quote = strchr(start, '"');
+    char *closing_quote = NULL;
+
+    /* Skip leading whitespace */
+    while (*start != '\0' && is_whitespace(*start)) {
+        start++;
+    }
+
+    for (int i = 0; i < words_to_skip + 1; i++) {
+        /* skip first word and second word */
+        while (*start != '\0' && !is_whitespace(*start)) {
+            start++;
+        }
+
+        if (*start == '\0') {
+            *error_found = 1;
+            handle_error(InvalidFormat, line_number);
             return 0;
         }
+
+        /* Skip whitespace between words */
+        while (*start != '\0' && is_whitespace(*start)) {
+            start++;
+        }
     }
-    return 1;
-}
 
-int valid_string_directive(char words_array[LEN][LEN], int line_number, int *error_found, int symbol_definition) {
-    char *string;
-    int string_length = 0;
-    int index = 1;
-
-    if (symbol_definition)
-        index++;
-
-    string = words_array[index];
-    string_length = strlen(string);
-
-    /* Check if the word is an empty string */
-    if (string_length == 0) {
-        *error_found = 1;
-        handle_error(EmptyStringDirective, line_number);
-        return 0;
-    }
-        /* Check if there are any additional words after the string directive */
-    else if (strcmp(words_array[index + 1], "") != 0) {
-        *error_found = 1;
-        handle_error(ExcessCharactersInDataLine, line_number);
-        return 0;
-    }
-    else if (string[0] != '"') {
+    /* Missing opening quote */
+    if (!opening_quote) {
         *error_found = 1;
         handle_error(MissingStartOfStringSign, line_number);
         return 0;
     }
-    else if (string_length == 1 || string_length > 1 && string[string_length - 1] != '"'){
+
+    /* Check characters before the directive */
+    if (*start != quote){
+        *error_found = 1;
+        handle_error(NonWhiteCharsBeforeQuote,line_number);
+        return 0;
+    }
+
+    /* Check characters within the string */
+    closing_quote = custom_strrchr(opening_quote + 1, '"');
+    if (!closing_quote) {
         *error_found = 1;
         handle_error(MissingEndOfStringSign, line_number);
         return 0;
     }
 
-        // Check the characters between the '"' characters (excluding the starting and ending '"')
-    else {
-        if (!is_valid_string(&string[1], string_length - 2)) {
+    for (char *ptr = opening_quote + 1; ptr < closing_quote; ptr++) {
+        if (!is_valid_char(*ptr)) {
             *error_found = 1;
             handle_error(InvalidCharInString, line_number);
             return 0;
         }
     }
 
-    /* passed all checks */
+    /* Check the characters after closing quote */
+    char *after_closing_quote = closing_quote + 1;
+    while (*after_closing_quote != '\0') {
+        if (!is_whitespace(*after_closing_quote)) {
+            *error_found = 1;
+            handle_error(NonWhiteCharsAfterClosingQuote, line_number);
+            return 0;
+        }
+        after_closing_quote++;
+    }
     return 1;
+}
+int handle_string_directive(struct DataStructure *data_array, int DC, char *line, int line_number) {
+    char *start = line;
+    char *closing_quote = custom_strrchr(start, '"'); /* Find the last quotation mark using custom_strrchr */
+    int chars_inserted = 0;
+    /* Skip to the first opening quote */
+    while (*start != '\0' && *start != '"') {
+        start++;
+    }
+    start++; /* Move past the opening quote */
+
+    while (start < closing_quote) {
+        write_character_to_dataStructure(&data_array[DC], *start);
+        DC++;
+        chars_inserted++;
+        start++;
+    }
+
+    /* Insert null terminator at the end of the string */
+    write_character_to_dataStructure(&data_array[DC], '\0');
+    chars_inserted++;
+
+    return chars_inserted;
+}
+
+
+int valid_number_range(char *word) {
+    int value = atoi(word);
+
+    /* valid 12 bits integer values */
+    if (value < -2048 || value > 2047) {
+        return 0;
+    }
+
+    return 1; /* No error */
+}
+int valid_commas_in_line(char words_array[LEN][LEN], int starting_index, int line_number) {
+    int i = starting_index;
+
+    /* Check if the first word is a comma */
+    if (words_array[i][0] == ',') {
+        handle_error(CommaAtStart,line_number);  /* Comma at start */
+        return 0;  /* Invalid */
+    }
+
+    i++;  /* Move to the next word */
+
+    /* Iterate through the words */
+    while (words_array[i][0] != '\0') {
+        /* Check if the current word is a comma */
+        if (words_array[i][0] == ',') {
+            /* Check for consecutive commas */
+            if (words_array[i - 1][0] == ',') {
+                handle_error(ConsecutiveCommas,line_number);  /* 2 consecutive commas */
+                return 0;  /* Invalid */
+            }
+        } else {
+            /* Check if the previous word is not a comma */
+            if (words_array[i - 1][0] != ',') {
+                handle_error(MissingComma,line_number);  /* Comma expected after a word */
+                return 0;  /* Invalid */
+            }
+        }
+
+        i++;  /* Move to the next word */
+    }
+
+    /* Check if the last word is a comma */
+    if (words_array[i - 1][0] == ',') {
+        handle_error(EndsWithComma,line_number);  /* Ends with comma error */
+        return 0;  /* Invalid */
+    }
+
+    return 1;  /* Valid */
+}
+int valid_data_directive(char words_array[LEN][LEN], int line_number, int *error_found, int symbol_definition) {
+    int index = 1; /* Start index for checking words_array */
+
+    /* Adjust index if symbol is defined */
+    if (symbol_definition) {
+        index++;
+    }
+
+    /* Check if commas are valid in the line */
+    if (valid_commas_in_line(words_array, index, line_number) ) {
+        /* Iterate through words_array in steps of 2 */
+        for (index; words_array[index][0] != '\0'; index += 2) {
+            /* Check if the current word is not a number */
+            if (!is_number(words_array[index])) {
+                handle_error(InvalidCharInDataDirective, line_number);
+                *error_found = 1; /* Set error flag */
+                return 0;         /* Directive is not valid */
+            }
+
+            /* Check the number range */
+            if (!valid_number_range(words_array[index]) ) {
+                handle_error(IntegerOverflow, line_number);
+                *error_found = 1; /* Set error flag */
+                return 0;         /* Directive is not valid */
+            }
+        }
+    } else {
+        *error_found = 1; /* Set error flag */
+        return 0;         /* Directive is not valid */
+    }
+
+    return 1; /* Directive is valid */
 }
