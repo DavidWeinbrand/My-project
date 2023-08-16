@@ -1,6 +1,6 @@
-
 #ifndef SPL2023B_PROJECT_COPY_ERRORS_H
 #define SPL2023B_PROJECT_COPY_ERRORS_H
+//#include <stdio.h>
 enum Error {
     NoError,
     ExcessCharactersAtStartMacro,
@@ -26,7 +26,17 @@ enum Error {
     MultipleSymbolDefinition,
     NonWhiteCharsBeforeQuote,
     NonWhiteCharsAfterClosingQuote,
-
+    SymbolMustStartWithLetter,
+    SymbolMustEndWithColon,
+    InvalidCharInSymbol,
+    UnknownOperationName,
+    InvalidNumberOfOperands,
+    ExcessCharactersInInstruction,
+    UndefinedOperandsNames,
+    InvalidOperandAddressing,
+    OnlySymbolsAllowed,
+    SymbolIsReservedWord,
+    EmptySymbolDefinition,
 
 
 };
@@ -58,6 +68,17 @@ const char* errorMessages[] = {
         "Multiple symbols definition found.",
         "Invalid characters before opening quote, only white chars allowed.",
         "Non white characters after closing quote detected.",
+        "Symbol must start with a letter.",
+        "Symbol must end with a colon.",
+        "Invalid char in symbol.",
+        "Unknown operation name.",
+        "Invalid number of operands",
+        "Excess characters after instruction.",
+        "Undefined operands names in instruction.",
+        "Invalid operands addressing for the given instruction." ,
+        "Only symbols allowed as parameters to extern directive.",
+        "Symbol cannot be a reserved language word.",
+        "Empty symbol definition.",
 
 };
 

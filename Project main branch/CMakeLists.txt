@@ -17,7 +17,7 @@ add_executable(SPL2023b_Project_copy
         src/create_file_func.c
         "src/FIRST ---PASS/david_first_pass.c"
         "src/FIRST ---PASS/Test.c"
-        "src/FIRST ---PASS/support functions/instruction_encoding_functions.c"
+        "src/FIRST ---PASS/support functions/functions.c"
         "src/FIRST ---PASS/support functions/line_foramting_functions.c"
         "src/FIRST ---PASS/header files/first_pass_headers.h"
         "src/FIRST ---PASS/support functions/handle_data_directive.c"

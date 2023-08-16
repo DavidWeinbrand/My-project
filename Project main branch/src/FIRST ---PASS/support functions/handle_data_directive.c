@@ -1,15 +1,10 @@
-int is_string_directive(char *word) {
-    if (strcmp(word,".string") == 0)
+
+int is_directive(char *word, const char *directive) {
+    if (strcmp(word, directive) == 0) {
         return 1;
+    }
     return 0;
 }
-int is_data_directive(char *word){
-    if (strcmp(word,".data") == 0)
-        return 1;
-    return 0;
-}
-
-
 /* By the project definition valid characters are visible ASCI chars which are chars between 32 and 126 including in the ASCI table */
 int is_valid_char(char c) {
     return (c >= 32 && c <= 126);
@@ -33,13 +28,14 @@ int valid_string_directive(char *line, int line_number, int *error_found, int wo
     char *last_non_whitespace = NULL;
     char *opening_quote = strchr(start, '"');
     char *closing_quote = NULL;
+    int i = 0;
 
     /* Skip leading whitespace */
     while (*start != '\0' && is_whitespace(*start)) {
         start++;
     }
 
-    for (int i = 0; i < words_to_skip + 1; i++) {
+    for (i; i < words_to_skip + 1; i++) {
         /* skip first word and second word */
         while (*start != '\0' && !is_whitespace(*start)) {
             start++;
@@ -99,6 +95,10 @@ int valid_string_directive(char *line, int line_number, int *error_found, int wo
     }
     return 1;
 }
+void write_character(struct DataStructure* data, char c) {
+    /* Convert the char to int and store it in the struct */
+    data->value = (int)c;
+}
 int handle_string_directive(struct DataStructure *data_array, int DC, char *line, int line_number) {
     char *start = line;
     char *closing_quote = custom_strrchr(start, '"'); /* Find the last quotation mark using custom_strrchr */
@@ -110,20 +110,21 @@ int handle_string_directive(struct DataStructure *data_array, int DC, char *line
     start++; /* Move past the opening quote */
 
     while (start < closing_quote) {
-        write_character_to_dataStructure(&data_array[DC], *start);
+        write_character(&data_array[DC], *start);
         DC++;
         chars_inserted++;
         start++;
     }
 
     /* Insert null terminator at the end of the string */
-    write_character_to_dataStructure(&data_array[DC], '\0');
+    write_character(&data_array[DC], '\0');
     chars_inserted++;
 
     return chars_inserted;
 }
-
-
+void write_integer(struct DataStructure* data, int number) {
+    data->value = number & 0xFFF; /* Mask the value to keep only the 12 least significant bits (LSBs) */
+}
 int valid_number_range(char *word) {
     int value = atoi(word);
 
@@ -134,7 +135,7 @@ int valid_number_range(char *word) {
 
     return 1; /* No error */
 }
-int valid_commas_in_line(char words_array[LEN][LEN], int starting_index, int line_number) {
+int valid_commas_in_directive(char words_array[LEN][LEN], int starting_index, int line_number) {
     int i = starting_index;
 
     /* Check if the first word is a comma */
@@ -174,15 +175,15 @@ int valid_commas_in_line(char words_array[LEN][LEN], int starting_index, int lin
     return 1;  /* Valid */
 }
 int valid_data_directive(char words_array[LEN][LEN], int line_number, int *error_found, int symbol_definition) {
-    int index = 1; /* Start index for checking words_array */
+    int index = 1; /* Start IC_index for checking words_array */
 
     /* Adjust index if symbol is defined */
     if (symbol_definition) {
-        index++;
+        index = index + 2;
     }
 
     /* Check if commas are valid in the line */
-    if (valid_commas_in_line(words_array, index, line_number) ) {
+    if (valid_commas_in_directive(words_array, index, line_number) ) {
         /* Iterate through words_array in steps of 2 */
         for (index; words_array[index][0] != '\0'; index += 2) {
             /* Check if the current word is not a number */
@@ -205,4 +206,64 @@ int valid_data_directive(char words_array[LEN][LEN], int line_number, int *error
     }
 
     return 1; /* Directive is valid */
+}
+int handle_data_directive(struct DataStructure *data_array, int DC, char words_array[LEN][LEN], int symbol_definition) {
+    int data_index = 1;
+    int values_inserted = 0;
+
+    /* if there is a symbol then we should skip 2 words because words_array separates symbol name and the char ':'  */
+    if (symbol_definition)
+        data_index = data_index + 2;
+
+    while (words_array[data_index][0] != '\0') {
+        int value = atoi(words_array[data_index]);
+
+        write_integer(&data_array[DC], value);
+        values_inserted++;
+        DC++;
+
+        /* Move to the next word if it's a comma */
+        if (words_array[data_index + 1][0] == ',') {
+            data_index += 2; /* Skip the comma and move to the next word */
+        } else {
+            data_index++; /* Move to the next word */
+        }
+    }
+
+    return values_inserted;
+}
+
+
+
+
+/* EXTERN AND ENTRY FUNCTIONS */
+int valid_extern_directive(char words_array[LEN][LEN], int *error_found, int line_number, int symbol_definition){
+    int index = 1;
+
+    /* if there is symbol definition skip the name of the symbol and ':' char */
+    if(symbol_definition)
+        index = index + 2;
+
+    if( !valid_commas_in_directive(words_array,index,line_number) ){
+        *error_found = 1;
+        return 0;
+    }
+
+    if (words_array[index][0] == '\0'){
+        *error_found = 1;
+        handle_error(InvalidNumberOfOperands,line_number);
+        return 0;
+    }
+
+    while ( words_array[index][0] != '\0'){
+        if( !is_symbol(words_array[index]) ){
+            *error_found = 1;
+            handle_error(OnlySymbolsAllowed,line_number);
+            return 0;
+        }
+        /* check the next parameter, skipping the: ',' char */
+        index = index + 2;
+    }
+    /* passed all checks */
+    return 1;
 }
