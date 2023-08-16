@@ -2,25 +2,34 @@
 #define first_pass_headers_H
 
 #define LEN 200
-#define ARRAY_SIZE 1024
+#define INITIAL_VAL 100
+
 #include <string.h>
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <stdint.h>
+
+
+
 typedef enum {
     CODE,
     DATA,
+    NOT_DEFINED
+} SymbolType;
+
+typedef enum {
     EXTERN,
     ENTRY,
-    NONE = -1
-} SymbolType;
+    NONE
+}SymbolCategory;
 
 typedef struct Symbol {
     char *name;
     int val;
     SymbolType type;
+    SymbolCategory category;
     struct Symbol *next;
 } Symbol;
 
@@ -181,12 +190,15 @@ int handle_data_directive(struct DataStructure *data_array, int DC, char words_a
 int is_data_directive(char *word);
 void write_integer(struct DataStructure* data, int number);
 int valid_commas_in_directive(char words_array[LEN][LEN], int starting_index, int line_number);
-int valid_extern_directive(char words_array[LEN][LEN], int *error_found, int line_number, int symbol_definition);
-void handle_extern_directive(char words_array[LEN][LEN], SymbolTable *table, int symbol_definition);
+int valid_entry_and_extern_directive(char words_array[LEN][LEN], int *error_found, int line_number, int symbol_definition);
+void handle_extern_and_entry_directives(char words_array[LEN][LEN], Symbol **symbol_head, int symbol_definition,int line_number, int *error_found, SymbolType type );
+
 
 /* SYMBOL DEF */
 int is_valid_symbol(const char *line, int line_number, int *error_found, char words_array[LEN][LEN]);
 int is_reserved_keyword(const char *word);
+void handle_symbol(Symbol **head, const char *name, int line_number, int *error_found, SymbolType parameter_type, int parameter_value);
+
 
 /* INSTRUCTIONS */
 int handle_valid_instruction(char words_array[LEN][LEN], struct InstructionStructure *instructions_array, int IC, int symbol_definition, int line_number, struct SymbolNameAndIndex **pass2_list_head);
@@ -205,12 +217,7 @@ int get_index_at(const struct SymbolNameAndIndex* head, int targetIndex);
 int get_line_number_at(const struct SymbolNameAndIndex* head, int targetIndex);
 
 
-/* SYMBOL TABLE STRUCT FUNCTIONS */
-Symbol *get_symbol_by_name(const SymbolTable *table, const char *name);
+/* STRUCT OF SYMBOL HANDLING */
+Symbol *create_symbol(const char *name, int val, SymbolType type, SymbolCategory category);
 
-void free_symbol_table(SymbolTable *table);
-void add_symbol(SymbolTable **table, const char *name, int val, SymbolType type);
-SymbolTable *init_table(int init_size);
-void print_symbol(const Symbol *symbol);
-void print_table(const SymbolTable *table);
 #endif

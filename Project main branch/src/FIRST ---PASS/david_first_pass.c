@@ -5,7 +5,7 @@
 
 
 
-int first_pass(FILE *am_file, struct InstructionStructure *instructions_array, struct DataStructure *data_array,  Symbol *symbol_head, struct SymbolNameAndIndex **second_pass_list ) {
+void first_pass(FILE *am_file, struct InstructionStructure *instructions_array, struct DataStructure *data_array,  Symbol *symbol_head, struct SymbolNameAndIndex **second_pass_list ) {
     char line[LEN];
     char words_array [LEN][LEN] = {0}; /* Initialize array */
     int index = 0;
@@ -35,9 +35,7 @@ int first_pass(FILE *am_file, struct InstructionStructure *instructions_array, s
         word = words_array[index];
 
         /* Step 3 and 4 */
-
-        /* 1STR: .data 1,2,3 */
-        if ( words_array[index + 1 ] == ':' ) {
+        if ( words_array[index + 1 ][0] == ':' ) {
             if ( is_valid_symbol(line, line_number,&error_found, words_array) ) {/* In this function we should output errors if found  */
                 symbol_definition = 1;
                 current_symbol_name = word; /* STR */
@@ -51,11 +49,11 @@ int first_pass(FILE *am_file, struct InstructionStructure *instructions_array, s
         /* step 5 */    /*example: STR: .data 6,7,3,5,6,7,4  */
         if (is_directive(word,".string") || is_directive(word,".data")) {
             /* step 6 */
-            if (symbol_definition) {
-                handle_symbol(&symbol_head,)
-
-                add_symbol(symbol_table, current_symbol_name, DC, DATA);
-            }
+            if (symbol_definition)
+                handle_symbol(&symbol_head, current_symbol_name, line_number, &error_found, DATA, DC);
+            /* if there was an error in with the symbol handling continue to next line */
+            if(error_found)
+                continue;
 
             /* step 7 */    /*example:  STR: .string     "abc , de fg"  */
             if ( is_directive(word,".string") ) {
@@ -70,30 +68,19 @@ int first_pass(FILE *am_file, struct InstructionStructure *instructions_array, s
 
         /* step 8 + 9*/   /*   M1: .extern STR,M2,M3  */
         if (is_directive(word,".extern") || is_directive(word,".entry")) {
+            if ( !valid_entry_and_extern_directive(words_array, &error_found, line_number, symbol_definition) )
+                continue;
 
-            if (symbol_definition) {
-                /* Do nothing */
+            if (is_directive(word,".extern") )
+                handle_extern_and_entry_directives(words_array,&symbol_head,symbol_definition,line_number, &error_found,EXTERN);
+            else
+                handle_extern_and_entry_directives(words_array,&symbol_head,symbol_definition,line_number, &error_found,ENTRY);
             }
 
-            if ( is_directive(word,".extern") ) {
-                if ( valid_extern_directive(words_array, &error_found, line_number, symbol_definition) )
-                    handle_extern_directive(words_array, symbol_table,symbol_definition);
-            } else {
-                if ( valid_entry_directive(words_array, line_number, &error_found) )
-                    handle_entry_directive(words_array, symbol_table); /* here should be special treatment of ENTRY */
-            }
-            continue;
-        }
 
         /* step 11 */
-        if (symbol_definition) {
-            if (symbol_is_in_symbolTable(symbol_table, current_symbol_name)){
-                error_found = 1;
-                handle_error(MultipleSymbolDefinition, line_number);
-                continue;
-            }
-            add_symbol(symbol_tabel, current_symbol_name, CODE, IC);
-        }
+        if (symbol_definition)
+            handle_symbol(&symbol_head, current_symbol_name,line_number,&error_found, CODE, IC);
 
         /* step 12 + 13 + 14 */  /* example: STR: mov 5,M2 */
         if (valid_instruction(words_array, line_number, symbol_definition) )
@@ -104,13 +91,17 @@ int first_pass(FILE *am_file, struct InstructionStructure *instructions_array, s
             handle_error(SomeErrorHere,line_number);
             continue;
         }
-
     }
-    update_labelTable(label_table,IC);
-    return 0;
+    handle_separation(symbol_head,IC,line_number,&error_found);
  }
 
 
+
+
+void handle_separation(Symbol **symbol_head,int IC,int line_number,int *error_found){
+
+
+}
 
 
 

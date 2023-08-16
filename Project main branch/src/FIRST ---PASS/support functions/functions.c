@@ -620,7 +620,7 @@ struct SymbolNameAndIndex* createNode(const char *name, int IC_index, int line_n
         return NULL;
     }
 
-    newNode->name = strdup(name);  /* Duplicate the string to avoid issues */
+    newNode->name = my_strdup(name);  /* Duplicate the string to avoid issues */
     newNode->IC_index = IC_index;
     newNode->line_number = line_number;  /* Set line number */
     newNode->next = NULL;
@@ -923,7 +923,7 @@ int handle_data_directive(struct DataStructure *data_array, int DC, char words_a
 
 
 /* EXTERN AND ENTRY FUNCTIONS */
-int valid_extern_directive(char words_array[LEN][LEN], int *error_found, int line_number, int symbol_definition){
+int valid_entry_and_extern_directive(char words_array[LEN][LEN], int *error_found, int line_number, int symbol_definition){
     int index = 1;
 
     /* if there is symbol definition skip the name of the symbol and ':' char */
@@ -953,17 +953,19 @@ int valid_extern_directive(char words_array[LEN][LEN], int *error_found, int lin
     /* passed all checks */
     return 1;
 }
-void handle_extern_directive(char words_array[LEN][LEN], SymbolTable table, int symbol_definition){
+void handle_extern_and_entry_directives(char words_array[LEN][LEN], Symbol **symbol_head, int symbol_definition,int line_number, int *error_found, SymbolType type ){
     int index = 1;
 
     if(symbol_definition)
         index = index + 2;
 
     while (words_array[index][0] != '\0'){
-        add_symbol(&table,words_array[index],0,EXTERN);
+        handle_symbol(symbol_head,words_array[index],line_number,error_found,type,0);
         index = index + 2;
     }
 }
+
+
 
 /* FORMAT LINE */
 int is_whitespace(char c) {
@@ -1088,45 +1090,63 @@ int comment_or_empty(char *line)
 
 
 
+
 /* SYMBOL STRUCT FUNTIONS */
-Symbol *create_symbol(const char *name, int val, SymbolType type) {
-    Symbol *new_symbol = (Symbol *)malloc(sizeof(Symbol));
-    if (new_symbol != NULL) {
-        new_symbol->name = strdup(name); /* Allocate and copy name */
-        new_symbol->val = val;
-        new_symbol->type = type;
-        new_symbol->next = NULL;
-    }
-    return new_symbol;
-}
-
-void handle_symbol(Symbol **head, const char *name, int line_number, int *error_found) {
+void handle_symbol(Symbol **head, const char *name, int line_number, int *error_found, SymbolType parameter_type, SymbolCategory parameter_category, int parameter_value) {
+    Symbol *existing_symbol = NULL;
+    Symbol *new_symbol = NULL;
     if (head == NULL || name == NULL) {
-        return;
+        return; /* Safeguard against invalid inputs */
     }
 
-    if ( is_in_symbol_list( *head, name) ) {
-        handle_error(MultipleSymbolDefinition, line_number);
-        *error_found = 1;
-        return;
-    }
+    /* Check if symbol with the given name already exists */
+    existing_symbol = find_symbol(*head, name);
+    if (existing_symbol != NULL) {
+        /* mark existing symbol as extern or entry */
+        if (existing_symbol->cateory == NONE && parameter_category != NONE)
+                existing_symbol->type = parameter_type;
+        else if(existing_symbol->cateory ==)
 
-    Symbol *new_symbol = create_symbol(name, 0, type); // Create new symbol
-    if (new_symbol == NULL) {
-        handle_error(MemoryAllocationFailed, line_number); // Handle memory allocation error
-        *error_found = 1;
-        return;
+        switch (existing_symbol->category {
+            case (ENTRY):
+                if (parameter_type == EXTERN) {
+                    handle_error(RedefinitionOfSymbolType, line_number);
+                    *error_found = 1;
+                    return;
+                }
+                if ((parameter_type == CODE || parameter_type == DATA) && (existing_symbol->val == 0))
+                    existing_symbol->val = parameter_value;
+                else {
+                    handle_error(MultipleSymbolDefinition, line_number);
+                    *error_found = 1;
+                    return;
+                }
+                break;
+            case (EXTERN):
+                if (parameter_type == ENTRY) {
+                    handle_error(RedefinitionOfSymbolType, line_number);
+                    *error_found = 1;
+                    return;
+                } else if (parameter_type == CODE || parameter_type == DATA) {
+                    handle_error(RedefinitionOfExternSymbol, line_number);
+                    *error_found = 1;
+                    return;
+                } else {} /* do nothing */
+                break;
+            default:  /* do nothing */
+                break;
+        }
     }
-
-    new_symbol->next = NULL; // Ensure the new symbol's next is NULL
-    if (*head == NULL) {
-        *head = new_symbol; // Set head to the new symbol
-    } else {
-        new_symbol->next = *head; // Link the new symbol to the current head
-        *head = new_symbol; // Set head to the new symbol
-    }
+        /* Create a new symbol and handle memory allocation errors */
+        new_symbol = create_symbol(name, parameter_value, parameter_category, parameter_type);
+        if (new_symbol == NULL) {
+            handle_error(FailedToAllocateMemory, line_number);
+            *error_found = 1;
+            return;
+        }
+        new_symbol->next = *head; /* Link the new symbol to the current head */
+        *head = new_symbol; /* Set head to the new symbol */
 }
-
 Symbol *find_symbol(Symbol *head, const char *name) {
     Symbol *current = head;
     while (current != NULL) {
@@ -1136,6 +1156,26 @@ Symbol *find_symbol(Symbol *head, const char *name) {
         current = current->next;
     }
     return NULL; // Symbol not found
+}
+int is_in_symbol_list(Symbol *head, const char *name) {
+    Symbol *symbol = find_symbol(head, name);
+    return (symbol != NULL);
+}
+Symbol *create_symbol(const char *name, int val, SymbolType type, SymbolCategory category) {
+    Symbol *new_symbol = (Symbol *)malloc(sizeof(Symbol));
+    if (new_symbol != NULL) {
+        new_symbol->name = my_strdup(name); /* Allocate and copy name */
+        new_symbol->val = val;
+        new_symbol->type = type;
+        new_symbol->category = category;
+        new_symbol->next = NULL;
+    }
+    return new_symbol;
+}
+
+int is_in_symbol_list(Symbol *head, const char *name) {
+    Symbol *symbol = find_symbol(head, name);
+    return (symbol != NULL);
 }
 
 void free_symbol_list(Symbol *head) {
@@ -1147,7 +1187,13 @@ void free_symbol_list(Symbol *head) {
     }
 }
 
-int is_in_symbol_list(Symbol *head, const char *name) {
-    Symbol *symbol = find_symbol(head, name);
-    return (symbol != NULL);
+char *my_strdup(const char *str) {
+    size_t length = strlen(str) + 1; /* Include space for the null terminator */
+    char *duplicate = (char *)malloc(length);
+
+    if (duplicate != NULL) {
+        strcpy(duplicate, str);
+    }
+
+    return duplicate;
 }

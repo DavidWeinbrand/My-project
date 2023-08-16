@@ -37,6 +37,8 @@ enum Error {
     OnlySymbolsAllowed,
     SymbolIsReservedWord,
     EmptySymbolDefinition,
+    RedefinitionOfSymbolType,
+    RedefinitionOfExternSymbol,
 
 
 };
@@ -79,6 +81,8 @@ const char* errorMessages[] = {
         "Only symbols allowed as parameters to extern directive.",
         "Symbol cannot be a reserved language word.",
         "Empty symbol definition.",
+        "Redefinition of symbol type.",
+        "Redefinition of extern symbol, cannot define symbol with the same name as an external symbol."
 
 };
 

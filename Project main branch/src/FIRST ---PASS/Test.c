@@ -1,7 +1,6 @@
 #include "/home/david/CLionProjects/My-project/Project main branch/src/FIRST ---PASS/header files/first_pass_headers.h"
 #include "/home/david/CLionProjects/My-project/Project main branch/src/Error handling/errors.h"
 
-
 /* TESTING HERE */
 
 int is_reserved_keyword(const char *word) {
@@ -75,7 +74,7 @@ int valid_commas_in_directive(char words_array[LEN][LEN], int starting_index, in
 }
 
 /* STR : .extern M1 , M2 , M3 */
-int valid_extern_directive(char words_array[LEN][LEN], int *error_found, int line_number, int symbol_definition){
+int valid_entry_and_extern_directive(char words_array[LEN][LEN], int *error_found, int line_number, int symbol_definition){
     int index = 1;
 
     /* if there is symbol definition skip the name of the symbol and ':' char */
@@ -106,26 +105,70 @@ int valid_extern_directive(char words_array[LEN][LEN], int *error_found, int lin
     return 1;
 }
 
-void handle_extern_directive(char words_array[LEN][LEN], SymbolTable *table, int symbol_definition){
-    int index = 1;
 
-    if(symbol_definition)
-        index = index + 2;
 
-    while (words_array[index][0] != '\0'){
-        add_symbol(&table,words_array[index],0,EXTERN);
-        index = index + 2;
+
+
+void handle_symbol(Symbol **head, const char *name, int line_number, int *error_found, SymbolType parameter_type, SymbolCategory parameter_category, int parameter_value) {
+    Symbol *existing_symbol = NULL;
+    Symbol *new_symbol = NULL;
+    if (head == NULL || name == NULL) {
+        *error_found = 1;
+        return; /* Safeguard against invalid inputs */
     }
+
+    /* Check if symbol with the given name already exists */
+    existing_symbol = find_symbol(*head, name);
+
+    if (existing_symbol != NULL) {
+
+
+
+        switch (existing_symbol->category){
+            case (ENTRY):
+                if (parameter_type == EXTERN) {
+                    handle_error(RedefinitionOfSymbolType, line_number);
+                    *error_found = 1;
+                    return;
+                }
+                if ((parameter_type == CODE || parameter_type == DATA) && (existing_symbol->val == 0))
+                    existing_symbol->val = parameter_value;
+                else {
+                    handle_error(MultipleSymbolDefinition, line_number);
+                    *error_found = 1;
+                    return;
+                }
+                break;
+            case (EXTERN):
+                if (parameter_type == ENTRY) {
+                    handle_error(RedefinitionOfSymbolType, line_number);
+                    *error_found = 1;
+                    return;
+                } else if (parameter_type == CODE || parameter_type == DATA) {
+                    handle_error(RedefinitionOfExternSymbol, line_number);
+                    *error_found = 1;
+                    return;
+                } else {} /* do nothing */
+                break;
+            default:  /* do nothing */
+                break;
+        }
+    }
+    /* Create a new symbol and handle memory allocation errors */
+    new_symbol = create_symbol(name, parameter_value, parameter_type);
+    if (new_symbol == NULL) {
+        handle_error(FailedToAllocateMemory, line_number);
+        *error_found = 1;
+        return;
+    }
+    new_symbol->next = *head; /* Link the new symbol to the current head */
+    *head = new_symbol; /* Set head to the new symbol */
 }
 
 
 
-
 int main() {
-    char words_array[LEN][LEN] = { "STR", ":", ".extern",   };
-    int error = 1;
-    if (valid_extern_directive(words_array,&error,1,1))
-        printf("valid");
+
     return 0;
 }
 
