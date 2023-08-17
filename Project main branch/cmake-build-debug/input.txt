@@ -1,11 +1,2 @@
-mcro m1
-inside m1
-endmcro
-mcro m2
-inside m2
-
-
-
-endmcro
-m1
-m2
+St1r: something
+;asdasd
