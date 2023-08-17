@@ -16,13 +16,13 @@
 typedef enum {
     CODE,
     DATA,
-    NOT_DEFINED
+    NONE_TYPE
 } SymbolType;
 
 typedef enum {
     EXTERN,
     ENTRY,
-    NONE
+    NONE_CATEGORY
 }SymbolCategory;
 
 typedef struct Symbol {
@@ -191,13 +191,13 @@ int is_data_directive(char *word);
 void write_integer(struct DataStructure* data, int number);
 int valid_commas_in_directive(char words_array[LEN][LEN], int starting_index, int line_number);
 int valid_entry_and_extern_directive(char words_array[LEN][LEN], int *error_found, int line_number, int symbol_definition);
-void handle_extern_and_entry_directives(char words_array[LEN][LEN], Symbol **symbol_head, int symbol_definition,int line_number, int *error_found, SymbolType type );
+void handle_extern_and_entry_directives(char words_array[LEN][LEN], Symbol **symbol_head, int symbol_definition,int line_number, int *error_found, SymbolType type, SymbolCategory category );
 
 
 /* SYMBOL DEF */
 int is_valid_symbol(const char *line, int line_number, int *error_found, char words_array[LEN][LEN]);
 int is_reserved_keyword(const char *word);
-void handle_symbol(Symbol **head, const char *name, int line_number, int *error_found, SymbolType parameter_type, int parameter_value);
+void handle_symbol(Symbol **head, const char *name, int line_number, int *error_found, SymbolType parameter_type, SymbolCategory parameter_entry_or_extern, int parameter_value);
 
 
 /* INSTRUCTIONS */

@@ -50,7 +50,7 @@ void first_pass(FILE *am_file, struct InstructionStructure *instructions_array, 
         if (is_directive(word,".string") || is_directive(word,".data")) {
             /* step 6 */
             if (symbol_definition)
-                handle_symbol(&symbol_head, current_symbol_name, line_number, &error_found, DATA, DC);
+                handle_symbol(&symbol_head, current_symbol_name, line_number, &error_found, DATA , NONE_CATEGORY, DC);
             /* if there was an error in with the symbol handling continue to next line */
             if(error_found)
                 continue;
@@ -72,15 +72,15 @@ void first_pass(FILE *am_file, struct InstructionStructure *instructions_array, 
                 continue;
 
             if (is_directive(word,".extern") )
-                handle_extern_and_entry_directives(words_array,&symbol_head,symbol_definition,line_number, &error_found,EXTERN);
+                handle_extern_and_entry_directives(words_array,&symbol_head,symbol_definition,line_number, &error_found,NONE_TYPE,EXTERN);
             else
-                handle_extern_and_entry_directives(words_array,&symbol_head,symbol_definition,line_number, &error_found,ENTRY);
-            }
+                handle_extern_and_entry_directives(words_array,&symbol_head,symbol_definition,line_number, &error_found, NONE_TYPE,ENTRY);
+        }
 
 
         /* step 11 */
         if (symbol_definition)
-            handle_symbol(&symbol_head, current_symbol_name,line_number,&error_found, CODE, IC);
+            handle_symbol(&symbol_head, current_symbol_name,line_number,&error_found, CODE, NONE_CATEGORY, IC);
 
         /* step 12 + 13 + 14 */  /* example: STR: mov 5,M2 */
         if (valid_instruction(words_array, line_number, symbol_definition) )
@@ -88,20 +88,16 @@ void first_pass(FILE *am_file, struct InstructionStructure *instructions_array, 
         else {/* the second word is not an instruction nor data/string directive than output error */
             /* here should be a function that can find more specific errors */
             error_found = 1;
-            handle_error(SomeErrorHere,line_number);
+            //handle_error(SomeErrorHere,line_number);
             continue;
         }
     }
-    handle_separation(symbol_head,IC,line_number,&error_found);
- }
-
-
-
-
-void handle_separation(Symbol **symbol_head,int IC,int line_number,int *error_found){
-
-
+    //handle_separation(symbol_head,IC,line_number,&error_found);
 }
+
+
+
+
 
 
 

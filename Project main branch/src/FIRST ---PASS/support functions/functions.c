@@ -953,14 +953,14 @@ int valid_entry_and_extern_directive(char words_array[LEN][LEN], int *error_foun
     /* passed all checks */
     return 1;
 }
-void handle_extern_and_entry_directives(char words_array[LEN][LEN], Symbol **symbol_head, int symbol_definition,int line_number, int *error_found, SymbolType type ){
+void handle_extern_and_entry_directives(char words_array[LEN][LEN], Symbol **symbol_head, int symbol_definition,int line_number, int *error_found, SymbolType type, SymbolCategory category ){
     int index = 1;
 
     if(symbol_definition)
         index = index + 2;
 
     while (words_array[index][0] != '\0'){
-        handle_symbol(symbol_head,words_array[index],line_number,error_found,type,0);
+        handle_symbol(symbol_head,words_array[index],line_number,error_found, category, type,0);
         index = index + 2;
     }
 }
@@ -1092,7 +1092,7 @@ int comment_or_empty(char *line)
 
 
 /* SYMBOL STRUCT FUNTIONS */
-void handle_symbol(Symbol **head, const char *name, int line_number, int *error_found, SymbolType parameter_type, SymbolCategory parameter_category, int parameter_value) {
+void handle_symbol(Symbol **head, const char *name, int line_number, int *error_found, SymbolType parameter_type, SymbolCategory parameter_entry_or_extern, int parameter_value) {
     Symbol *existing_symbol = NULL;
     Symbol *new_symbol = NULL;
     if (head == NULL || name == NULL) {
@@ -1103,42 +1103,54 @@ void handle_symbol(Symbol **head, const char *name, int line_number, int *error_
     existing_symbol = find_symbol(*head, name);
     if (existing_symbol != NULL) {
         /* mark existing symbol as extern or entry */
-        if (existing_symbol->cateory == NONE && parameter_category != NONE)
-                existing_symbol->type = parameter_type;
-        else if(existing_symbol->cateory ==)
-
-        switch (existing_symbol->category {
-            case (ENTRY):
-                if (parameter_type == EXTERN) {
-                    handle_error(RedefinitionOfSymbolType, line_number);
+        switch (existing_symbol->cateory ){
+            case(NONE):
+                if (parameter_entry_or_extern == ENTRY)
+                    existing_symbol->type = ENTRY;
+                else if (parameter_entry_or_extern == EXTERN){
+                    handle_error(RedefinitionOfSymbolType,line_number);
+                    *error_found = 1;
+                    return;
+                } else if (parameter_entry_or_extern == NONE){
+                    handle_error(MultipleSymbolDefinition,line_number);
                     *error_found = 1;
                     return;
                 }
-                if ((parameter_type == CODE || parameter_type == DATA) && (existing_symbol->val == 0))
+                break;
+            case(ENTRY):
+                if (parameter_entry_or_extern == EXTERN){
+                    handle_error(RedefinitionOfSymbolType,line_number);
+                    *error_found = 1;
+                    return;
+                }
+                else if (existing_symbol->val == 0 && parameter_entry_or_extern == NONE ){
                     existing_symbol->val = parameter_value;
+                }
+                else if (parameter_entry_or_extern == ENTRY) {} /* do nothing */
                 else {
-                    handle_error(MultipleSymbolDefinition, line_number);
+                    handle_error(MultipleSymbolDefinition,line_number);
                     *error_found = 1;
                     return;
                 }
                 break;
-            case (EXTERN):
-                if (parameter_type == ENTRY) {
-                    handle_error(RedefinitionOfSymbolType, line_number);
+            case(EXTERN):
+                if (parameter_entry_or_extern == ENTRY){
+                    handle_error(RedefinitionOfSymbolType,line_number);
                     *error_found = 1;
                     return;
-                } else if (parameter_type == CODE || parameter_type == DATA) {
-                    handle_error(RedefinitionOfExternSymbol, line_number);
+                }else if (parameter_entry_or_extern == EXTERN){} /* do nothing */
+                else{
+                    handle_error(RedefinitionOfExternSymbol,line_number);
                     *error_found = 1;
                     return;
-                } else {} /* do nothing */
+                }
                 break;
-            default:  /* do nothing */
-                break;
+
         }
+
     }
         /* Create a new symbol and handle memory allocation errors */
-        new_symbol = create_symbol(name, parameter_value, parameter_category, parameter_type);
+        new_symbol = create_symbol(name, parameter_value, parameter_entry_or_extern, parameter_type);
         if (new_symbol == NULL) {
             handle_error(FailedToAllocateMemory, line_number);
             *error_found = 1;
