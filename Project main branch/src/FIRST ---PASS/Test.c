@@ -72,8 +72,6 @@ int valid_commas_in_directive(char words_array[LEN][LEN], int starting_index, in
 
     return 1;  /* Valid */
 }
-
-/* STR : .extern M1 , M2 , M3 */
 int valid_entry_and_extern_directive(char words_array[LEN][LEN], int *error_found, int line_number, int symbol_definition){
     int index = 1;
 
@@ -104,7 +102,6 @@ int valid_entry_and_extern_directive(char words_array[LEN][LEN], int *error_foun
     /* passed all checks */
     return 1;
 }
-
 
 
 
